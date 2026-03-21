@@ -3,57 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>March Production Schedule</title>
+    <title>Isuzu Production Schedule | March 2026</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <style>
-        .table-n-series { border-left: 5px solid #007bff; }
-        .table-f-series { border-left: 5px solid #dc3545; }
-        .header-custom { background: #212529; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .header-custom { background: #1a1a1a; color: white; padding: 20px; border-radius: 10px; margin-bottom: 25px; }
+        
+        /* 1. SOLID BLACK SECTION HEADERS */
+        .black-header-row { 
+            background-color: #000000 !important; 
+            color: #ffffff !important; 
+            text-align: center; 
+        }
+        .black-header-row td { 
+            padding: 15px !important; 
+            font-weight: bold; 
+            letter-spacing: 5px; 
+            border: none !important; 
+            text-transform: uppercase;
+        }
+
+        /* 2. GRID & CELL STYLING */
+        .day-cell { min-width: 42px; text-align: center; border: 1px solid #dee2e6; vertical-align: middle; font-size: 0.85rem; }
+        .qty-box { 
+            background-color: #ffeb3b; 
+            font-weight: bold; 
+            color: #000; 
+            border-radius: 4px; 
+            padding: 3px 6px; 
+            border: 1px solid #fbc02d; 
+            display: inline-block;
+        }
+        
+        /* 3. STICKY COLUMNS (Fixes "Missing Models") */
+        .sticky-model { 
+            position: sticky; 
+            left: 0; 
+            background: white !important; 
+            z-index: 5; 
+            border-right: 1px solid #ddd; 
+            min-width: 150px; 
+        }
+        .sticky-lot { 
+            position: sticky; 
+            left: 150px; 
+            background: white !important; 
+            z-index: 5; 
+            border-right: 2px solid #333; 
+        }
+        
+        /* 4. TODAY HIGHLIGHT (March 21) */
+        .today-highlight { 
+            background-color: #ffc107 !important; 
+            border: 2px solid #000 !important; 
+            font-weight: bold; 
+            color: #000 !important;
+        }
+
+        /* 5. INTERACTIVE HOVER (The Crosshair) */
+        tbody tr:hover { background-color: rgba(0, 0, 0, 0.05) !important; transition: 0.2s; }
+        td:hover::after, th:hover::after {
+            content: ""; position: absolute; background-color: rgba(0, 123, 255, 0.1);
+            left: 0; right: 0; top: -5000px; bottom: -5000px; z-index: -1;
+        }
+        table { overflow: hidden; }
+        td, th { position: relative; white-space: nowrap; }
     </style>
 </head>
-<body class="bg-light">
-    <div class="container mt-4">
-        <div class="header-custom d-flex justify-content-between align-items-center">
-            <h1>March Production Dashboard</h1>
-            <div class="text-end">
-                <h4>Cumulative Total: <span class="badge bg-success">{{ grand_total }} Units</span></h4>
-            </div>
-        </div>
+<body class="p-4">
 
-        <div class="table-responsive bg-white p-3 shadow-sm rounded">
-            <table class="table table-hover align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Date</th>
-                        <th>Line</th>
-                        <th>Model</th>
-                        <th>Lot No.</th>
-                        <th>CKD IEA</th>
-                        <th>CKD Thailand</th>
-                        <th>Customer (PRD)</th>
-                        <th>Daily Qty</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for task in tasks %}
-                    <tr class="{% if task.line == 'N' %}table-n-series{% else %}table-f-series{% endif %}">
-                        <td><strong>{{ task.production_date|date:"d M" }}</strong></td>
-                        <td>{{ task.get_line_display }}</td>
-                        <td>{{ task.model_name }}</td>
-                        <td><span class="badge bg-secondary">{{ task.lot_number }}</span></td>
-                        <td>{{ task.ckd_arrival_iea }}</td>
-                        <td>{{ task.ckd_thailand|default:"---" }}</td>
-                        <td>{{ task.prd_customer|default:"Stock" }}</td>
-                        <td class="text-center fw-bold">{{ task.daily_quantity }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center py-4">No production data available for March.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="header-custom d-flex justify-content-between align-items-center shadow">
+        <div>
+            <h2 class="mb-0">March 2026 Production Schedule</h2>
+            <p class="mb-0 text-muted small">Isuzu East Africa | Nairobi Assembly Plant</p>
         </div>
+        <button class="btn btn-warning fw-bold px-4 shadow-sm" onclick="scrollToToday()">
+            📍 JUMP TO TODAY (MAR 21)
+        </button>
     </div>
+
+    <div class="table-responsive shadow-lg bg-white rounded">
+        <table class="table table-sm table-bordered mb-0">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th class="sticky-model">MODEL</th>
+                    <th class="sticky-lot">LOT NO.</th>
+                    <th>CKD (IEA)</th>
+                    <th>PRD CUSTOMER</th>
+                    {% for day in march_days %}
+                        <th class="day-cell {% if day == 21 %}today-highlight{% endif %}" 
+                            {% if day == 21 %}id="today-column"{% endif %}>{{ day }}</th>
+                    {% endfor %}
+                    <th class="bg-primary">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="black-header-row">
+                    <td colspan="40">N-SERIES ASSEMBLY LINE</td>
+                </tr>
+                {% for lot in n_series_lots %}
+                <tr>
+                    <td class="sticky-model fw-bold">{{ lot.model_name }}</td>
+                    <td class="sticky-lot text-center">{{ lot.lot_number }}</td>
+                    <td><small>{{ lot.ckd_arrival_iea }}</small></td>
+                    <td><small>{{ lot.prd_customer|default:"STOCK" }}</small></td>
+                    
+                    {% for day in march_days %}
+                        <td class="day-cell">
+                            {# Using the specific 'days' dictionary from our view #}
+                            {% for day_num, qty in lot.days.items %}
+                                {% if day_num == day %}
+                                    <div class="qty-box">{{ qty }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    {% endfor %}
+                    
+                    <td class="text-center fw-bold table-active">{{ lot.lot_total_units }}</td>
+                </tr>
+                {% endfor %}
+
+                <tr class="black-header-row">
+                    <td colspan="40">F-SERIES ASSEMBLY LINE</td>
+                </tr>
+                {% for lot in f_series_lots %}
+                <tr>
+                    <td class="sticky-model fw-bold">{{ lot.model_name }}</td>
+                    <td class="sticky-lot text-center">{{ lot.lot_number }}</td>
+                    <td><small>{{ lot.ckd_arrival_iea }}</small></td>
+                    <td><small>{{ lot.prd_customer|default:"STOCK" }}</small></td>
+                    
+                    {% for day in march_days %}
+                        <td class="day-cell">
+                            {% for day_num, qty in lot.days.items %}
+                                {% if day_num == day %}
+                                    <div class="qty-box">{{ qty }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    {% endfor %}
+                    
+                    <td class="text-center fw-bold table-active">{{ lot.lot_total_units }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function scrollToToday() {
+            const el = document.getElementById('today-column');
+            if (el) el.scrollIntoView({ 
+                behavior: 'smooth', 
+                inline: 'center', 
+                block: 'nearest' 
+            });
+        }
+        // Run automatically on load
+        window.onload = () => setTimeout(scrollToToday, 600);
+    </script>
 </body>
 </html>
