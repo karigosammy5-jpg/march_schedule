@@ -1,5 +1,22 @@
 from django.shortcuts import render
 from .models import MarchProductionTask
+from rest_framework import generics, filters
+from .serializers import ProductionTaskSerializer
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
+class ProductionTaskListView(generics.ListAPIView):
+    queryset = MarchProductionTask.objects.all().order_by('production_date')
+    serializer_class = ProductionTaskSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['lot_number', 'line']
+    search_fields = ['model_name', 'prd_customer']
+
+class ProductionTaskDetailAPI(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MarchProductionTask.objects.all()
+    serializer_class = ProductionTaskSerializer
 
 def dashboard(request):
     all_tasks = MarchProductionTask.objects.all().order_by('production_date')
@@ -31,3 +48,25 @@ def dashboard(request):
         'march_days': range(1, 32),
     }
     return render(request, 'production/dashboard.html', context)
+
+@api_view(['POST'])
+def update_task_by_lot_day(request):
+    # 1. Catch the data sent by your JavaScript
+    lot_number = request.data.get('lot_number')
+    day = request.data.get('day')
+    quantity = request.data.get('quantity')
+    
+    try:
+        # 2. Find the specific Isuzu Task for that Lot and Day in March
+        task = MarchProductionTask.objects.get(
+            lot_number=lot_number, 
+            production_date__day=day
+        )
+        # 3. Update the quantity and save it to the database
+        task.daily_quantity = quantity
+        task.save()
+        
+        return Response({'status': 'Success!'}, status=status.HTTP_200_OK)
+        
+    except MarchProductionTask.DoesNotExist:
+        return Response({'error': 'No scheduled task found for that Lot on that Day.'}, status=status.HTTP_404_NOT_FOUND)
