@@ -1,6 +1,6 @@
 from django.db import models
 
-class MarchProductionTask(models.Model):
+class ProductionTask(models.Model):
     LINE_SERIES_CHOICES = [
         ('N', 'N-SERIES'),
         ('F', 'F-SERIES'),

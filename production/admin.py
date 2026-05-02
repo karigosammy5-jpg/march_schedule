@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import MarchProductionTask
+from .models import ProductionTask
 
 
-@admin.register(MarchProductionTask)
-class MarchProductionAdmin(admin.ModelAdmin):
+@admin.register(ProductionTask)
+class ProductionAdmin(admin.ModelAdmin):
     # This controls the columns you see in the main list
     list_display = ('production_date', 'line', 'lot_number', 'model_name', 'prd_customer', 'daily_quantity')
     

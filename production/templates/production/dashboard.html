@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Isuzu Production Schedule | March 2026</title>
+    <title>Isuzu Production Schedule | {{ current_month_name }} {{ current_year }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <style>
         body { background-color: #f4f7f6; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         .header-custom { background: #1a1a1a; color: white; padding: 20px; border-radius: 10px; margin-bottom: 25px; }
         
-        /* 1. SOLID BLACK SECTION HEADERS */
         .black-header-row { 
             background-color: #000000 !important; 
             color: #ffffff !important; 
@@ -24,132 +23,195 @@
             text-transform: uppercase;
         }
 
-        /* 2. GRID & CELL STYLING */
-        .day-cell { min-width: 42px; text-align: center; border: 1px solid #dee2e6; vertical-align: middle; font-size: 0.85rem; }
-.qty-box { 
-    background-color: #ffeb3b; 
-    font-weight: bold; 
-    color: #000; 
-    border-radius: 4px; 
-    padding: 3px 6px; 
-    border: 1px solid #fbc02d; 
-    display: inline-block;
-}
+        .day-cell { min-width: 42px; text-align: center; border: 1px solid #dee2e6; vertical-align: middle; font-size: 0.85rem; height: 45px; }
+        .qty-box { 
+            background-color: #ffeb3b; 
+            font-weight: bold; 
+            color: #000; 
+            border-radius: 4px; 
+            padding: 3px 6px; 
+            border: 1px solid #fbc02d; 
+            display: inline-block;
+        }
         
-        /* 3. STICKY COLUMNS (Fixes "Missing Models") */
+        /* ==========================================
+           1. STICKY COLUMNS (Model & Lot)
+           ========================================== */
         .sticky-model { 
             position: sticky; 
             left: 0; 
-            background: white !important; 
-            z-index: 5; 
+            min-width: 220px; /* Wide enough for truck models */
+            white-space: nowrap !important; /* Forces one line */
             border-right: 1px solid #ddd; 
-            min-width: 150px; 
+            z-index: 5 !important;
+            background-color: #ffffff !important;
         }
         .sticky-lot { 
-            position: sticky; 
-            left: 150px; 
-            background: white !important; 
-            z-index: 5; 
+            
+            
+            min-width: 110px; 
+            white-space: nowrap !important; 
             border-right: 2px solid #333; 
+            z-index: 5 !important;
+            background-color: #ffffff !important;
+            vertical-align: middle;
+        }
+
+        /* Keep headers dark and on top */
+        thead th.sticky-model, thead th.sticky-lot {
+            background-color: #212529 !important; 
+            color: white !important;
+            z-index: 10 !important; 
+        }
+
+        /* ==========================================
+           2. THE 3 SPACIOUS COLUMNS (CKD & PRDs)
+           ========================================== */
+      .ckd-iea-col, .ckd-thai-col {
+            min-width: 200px !important; 
+            width: 200px !important;
+            max-width: 200px !important;
+            white-space: nowrap !important; 
+            text-align: center !important;
+            vertical-align: middle !important;
+            padding: 15px 10px !important; /* Gives the text extra breathing room */
+        }
+        .prd-col {
+            min-width: 260px; /* Massive width for TANESCO GREEN / APS GREEN */
+            white-space: nowrap !important; /* No stacking, no overlapping */
+            vertical-align: middle;
+        }
+
+        /* ==========================================
+           3. THE CROSSHAIR EFFECT
+           ========================================== */
+        table { overflow: hidden !important; }
+        td, th { position: relative !important; }
+
+        /* Row Highlight */
+        tbody tr:hover td { 
+            background-color: rgba(255, 193, 7, 0.15) !important; 
+            transition: background-color 0.1s ease;
         }
         
-        /* 4. TODAY HIGHLIGHT (March 21) */
+        /* Column Highlight */
+        tbody td:hover::after {
+            content: ""; 
+            position: absolute; 
+            background-color: rgba(255, 193, 7, 0.15);
+            left: 0; right: 0; top: -5000px; bottom: -5000px; 
+            z-index: 2; 
+            pointer-events: none; 
+        }
+
+        /* Protect sticky columns from the yellow highlight */
+        tbody td.sticky-model:hover::after, tbody td.sticky-lot:hover::after { display: none; }
+        tbody tr:hover td.sticky-model, tbody tr:hover td.sticky-lot { background-color: #ffffff !important; }
+
+        /* Dynamic Today Highlight */
         .today-highlight { 
             background-color: #ffc107 !important; 
             border: 2px solid #000 !important; 
             font-weight: bold; 
             color: #000 !important;
         }
-
-        /* 5. INTERACTIVE HOVER (The Crosshair) */
-        tbody tr:hover { background-color: rgba(0, 0, 0, 0.05) !important; transition: 0.2s; }
-        td:hover::after, th:hover::after {
-            content: ""; position: absolute; background-color: rgba(0, 123, 255, 0.1);
-            left: 0; right: 0; top: -5000px; bottom: -5000px; z-index: -1;
-        }
-        table { overflow: hidden; }
-        td, th { position: relative; white-space: nowrap; }
     </style>
 </head>
 <body class="p-4">
 
     <div class="header-custom d-flex justify-content-between align-items-center shadow">
         <div>
-            <h2 class="mb-0">March 2026 Production Schedule</h2>
+            <h2 class="mb-0">{{ current_month_name }} {{ current_year }} Production Schedule</h2>
             <p class="mb-0 text-muted small">Isuzu East Africa | Nairobi Assembly Plant</p>
         </div>
-        <button class="btn btn-warning fw-bold px-4 shadow-sm" onclick="scrollToToday()">
-            📍 JUMP TO TODAY (MAR 21)
-        </button>
+
+        <div class="d-flex align-items-center gap-2">
+            <a href="?month={{ prev_month }}&year={{ prev_year }}" 
+               class="btn btn-dark btn-sm border-secondary text-white">⬅️ Prev</a>
+
+            <span class="fw-bold px-3 text-white" style="min-width: 130px; text-align: center;">
+                {{ current_month_name }} {{ current_year }}
+            </span>
+
+            <a href="?month={{ next_month }}&year={{ next_year }}" 
+               class="btn btn-dark btn-sm border-secondary text-white">Next ➡️</a>
+
+            <button class="btn btn-warning fw-bold ms-3 px-4 shadow-sm" onclick="scrollToToday()">
+                📍 JUMP TO TODAY 
+            </button>
+        </div>
     </div>
 
-   
     <div class="table-responsive shadow-lg bg-white rounded">
         <table class="table table-sm table-bordered mb-0">
             <thead class="table-dark text-center">
                 <tr>
                     <th class="sticky-model">MODEL</th>
-                    <th class="sticky-lot">LOT NO.</th>
-                    <th>CKD (IEA)</th>
-                    <th>PRD CUSTOMER</th>
-                    {% for day in march_days %}
-                        <th class="day-cell {% if day == 21 %}today-highlight{% endif %}" 
-                            {% if day == 21 %}id="today-column"{% endif %}>{{ day }}</th>
+                    <th class="sticky-lot">LOT NUMBER</th>
+                    <th class="ckd-iea-col">CKD ARRIVAL (IEA)</th>
+                    <th class="ckd-thai-col">CKD (THAILAND)</th>
+                    <th class="prd-col">PRDs</th>
+                    
+                    {% for day in month_days %}
+                        <th class="day-cell {% if day == now.day and current_month_num == now.month and current_year == now.year %}today-highlight{% endif %}" 
+                            {% if day == now.day and current_month_num == now.month and current_year == now.year %}id="today-column"{% endif %}>
+                            {{ day }}
+                        </th>
                     {% endfor %}
-                    <th class="bg-primary">TOTAL</th>
+                    <th class="bg-primary text-white">TOTAL</th>
                 </tr>
             </thead>
             <tbody>
                 <tr class="black-header-row">
-                    <td colspan="40">N-SERIES ASSEMBLY LINE</td>
+                    <td colspan="45">N-SERIES ASSEMBLY LINE</td>
                 </tr>
                 {% for lot in n_series_lots %}
                 <tr>
                     <td class="sticky-model fw-bold">{{ lot.model_name }}</td>
                     <td class="sticky-lot text-center">{{ lot.lot_number }}</td>
-                    <td><small>{{ lot.ckd_arrival_iea }}</small></td>
-                    <td><small>{{ lot.prd_customer|default:"STOCK" }}</small></td>
+                    <td class="ckd-iea-col"><small>{{ lot.ckd_arrival_iea }}</small></td>
+                    <td class="ckd-thai-col"><small>{{ lot.ckd_thailand|default:"-" }}</small></td>
+                    <td class="prd-col"><small class="fw-bold text-secondary">{{ lot.prd_customer|default:"STOCK" }}</small></td>
                     
-                    {% for day in march_days %}
+                    {% for day in month_days %}
                         <td class="day-cell">
-                            {# Using the specific 'days' dictionary from our view #}
                             {% for day_num, qty in lot.days.items %}
                                 {% if day_num == day %}
-                                    <div class="qty-box"
-                                         style="cursor: pointer;"
-                                         onclick="openEditModal('{{lot.lot_number }}', '{{day}}', '{{qty}}')"
-                                         title="Edit Production for Day {{ day}}">
-                                        {{qty}}
-                        </div>
+                                    <div class="qty-box" style="cursor: pointer;"
+                                         onclick="openEditModal('{{ lot.lot_number }}', '{{ day }}', '{{ qty }}')">
+                                        {{ qty }}
+                                    </div>
                                 {% endif %}
                             {% endfor %}
                         </td>
                     {% endfor %}
-                    
                     <td class="text-center fw-bold table-active">{{ lot.lot_total_units }}</td>
                 </tr>
                 {% endfor %}
 
                 <tr class="black-header-row">
-                    <td colspan="40">F-SERIES ASSEMBLY LINE</td>
+                    <td colspan="45">F-SERIES ASSEMBLY LINE</td>
                 </tr>
                 {% for lot in f_series_lots %}
                 <tr>
                     <td class="sticky-model fw-bold">{{ lot.model_name }}</td>
                     <td class="sticky-lot text-center">{{ lot.lot_number }}</td>
-                    <td><small>{{ lot.ckd_arrival_iea }}</small></td>
-                    <td><small>{{ lot.prd_customer|default:"STOCK" }}</small></td>
+                    <td class="ckd-iea-col"><small>{{ lot.ckd_arrival_iea }}</small></td>
+                    <td class="ckd-thai-col"><small>{{ lot.ckd_thailand|default:"-" }}</small></td>
+                    <td class="prd-col"><small class="fw-bold text-secondary">{{ lot.prd_customer|default:"STOCK" }}</small></td>
                     
-                    {% for day in march_days %}
+                    {% for day in month_days %}
                         <td class="day-cell">
                             {% for day_num, qty in lot.days.items %}
                                 {% if day_num == day %}
-                                    <div class="qty-box">{{ qty }}</div>
+                                    <div class="qty-box" style="cursor: pointer;"
+                                         onclick="openEditModal('{{ lot.lot_number }}', '{{ day }}', '{{ qty }}')">
+                                        {{ qty }}
+                                    </div>
                                 {% endif %}
                             {% endfor %}
                         </td>
                     {% endfor %}
-                    
                     <td class="text-center fw-bold table-active">{{ lot.lot_total_units }}</td>
                 </tr>
                 {% endfor %}
@@ -181,87 +243,79 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        async function refreshProductionData() {
-            try {
-                const response = await fetch('/api/tasks/');
-                const data = await response.json();
-                console.log("Latest Isuzu Production Data:", data);
-            } catch (error) {
-                console.error("API Connection Error:", error);
-            }
-        }
-        setInterval(refreshProductionData, 30000);
+<script>
 
-        function scrollToToday() {
-            const el = document.getElementById('today-column');
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
-        }
-
-        function openEditModal(lotNumber, day, currentQty) {
-            document.getElementById('modalLot').innerText = lotNumber;
-            document.getElementById('modalDay').innerText = day;
-            document.getElementById('newQty').value = currentQty;
-
-            // This will now work because the Bootstrap script is loaded right above!
-            const myModal = new bootstrap.Modal(document.getElementById('editModal'));
-            myModal.show();
-        }
-
-        async function submitUpdate() {
-    const lot = document.getElementById('modalLot').innerText;
-    const day = document.getElementById('modalDay').innerText;
-    const newQty = document.getElementById('newQty').value;
-    const csrftoken = getCookie('csrftoken');
-
-    // 1. First, find the task ID from our API data
-    // (For now, we'll assume you have the ID, but a real app would 
-    // fetch the specific Task ID based on the Lot and Day)
-    
-    try {
-        const response = await fetch(`/api/tasks/update_by_lot_day/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                lot_number: lot,
-                day: day,
-                quantity: newQty
-            })
-        });
-
-        if (response.ok) {
-            alert("Success! Isuzu Database Updated.");
-            location.reload(); // Refresh to see the new number in yellow
-        } else {
-            alert("Error: Could not update the database.");
-        }
-    } catch (error) {
-        console.error("Critical API Error:", error);
-    }
-}
-        // Helper to get the CSRF token from Django cookies
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
+    function scrollToToday() {
+        const el = document.getElementById('today-column');
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
     }
-    return cookieValue;
-}
+
+    // 1. BULLETPROOF MODAL OPENER
+    window.openEditModal = function(lotNumber, day, currentQty) {
+        document.getElementById('modalLot').innerText = lotNumber;
+        document.getElementById('modalDay').innerText = day;
+        document.getElementById('newQty').value = currentQty;
+        
+        const modalElement = document.getElementById('editModal');
+        let myModal = bootstrap.Modal.getInstance(modalElement);
+        if (!myModal) {
+            myModal = new bootstrap.Modal(modalElement);
+        }
+        myModal.show();
+    };
+
+    // 2. BULLETPROOF SAVE FUNCTION
+    window.submitUpdate = async function() {
+        const lot = document.getElementById('modalLot').innerText;
+        const day = document.getElementById('modalDay').innerText;
+        const newQty = document.getElementById('newQty').value;
+        const csrftoken = getCookie('csrftoken'); // This requires the function below!
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlYear = urlParams.get('year') || new Date().getFullYear();
+        const urlMonth = urlParams.get('month') || (new Date().getMonth() + 1);
+
+        try {
+            const response = await fetch(`/api/tasks/update_by_lot_day/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify({ 
+                    lot_number: lot, 
+                    day: day, 
+                    quantity: newQty,
+                    year: urlYear,
+                    month: urlMonth 
+                })
+            });
+
+            if (response.ok) {
+                location.reload(); 
+            } else {
+                alert("Error: Could not update the database.");
+            }
+        } catch (error) {
+            console.error("Critical API Error:", error);
+        }
+    };
+
+    // 3. THE MISSING COOKIE FUNCTION (This fixes your current error)
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>   
     </script>
 </body>
 </html>
-</body>
-</html>
-
